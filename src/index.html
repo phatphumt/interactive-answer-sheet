@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #111318;
+    --surface: #191c23;
+    --card: #1f232d;
+    --card-border: #2b3140;
+    --next: #38bdf8;
+    --next-bg: #182635;
+    --revealed: #252a36;
+    --text: #f3f5f7;
+    --muted: #6b7280;
+    --accent: #38bdf8;
+    --panel: #171b22;
+    --danger: #f87171;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    min-height: 100vh;
+    font-family: "Space Grotesk", ui-sans-serif, system-ui, sans-serif;
+    color: var(--text);
+    background: var(--bg);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 28px 18px 22px;
+    cursor: pointer;
+    user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wrap { width: min(860px, 100%); }
+  #progress {
+    height: 4px;
+    width: 100%;
+    background: #232834;
+    border-radius: 999px;
+    overflow: hidden;
+    margin-bottom: 18px;
+  }
+  #bar {
+    height: 100%;
+    width: 0%;
+    background: var(--accent);
+    border-radius: 999px;
+    transition: width 260ms ease;
+  }
+  #sheet {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(62px, 1fr));
+    gap: 12px;
+  }
+  .item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
+    background: var(--card);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: clamp(1.2rem, 2.5vw, 1.55rem);
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    transform: translateY(0);
+    transition: transform 180ms ease, border-color 180ms ease, background 180ms ease;
+    overflow: hidden;
+  }
+  .qnum {
+    position: absolute;
+    top: 7px;
+    left: 8px;
+    font-family: "IBM Plex Mono", ui-monospace, monospace;
+    font-size: 0.66rem;
+    font-weight: 500;
+    color: #596173;
+    letter-spacing: 0;
+    line-height: 1;
+    pointer-events: none;
+  }
+  .ans {
+    color: transparent;
+    transition: color 160ms ease, transform 160ms ease;
+    transform: translateY(2px);
+  }
+  .dot {
+    position: absolute;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #3a4254;
+    transition: opacity 160ms ease, transform 160ms ease, background 160ms ease;
+  }
+  .item.next {
+    border-color: var(--next);
+    background: var(--next-bg);
+    transform: translateY(-1px);
+  }
+  .item.next .dot {
+    background: var(--accent);
+    transform: scale(1.2);
+  }
+  .item.next .qnum { color: #8aa0b5; }
+  .item.revealed {
+    background: var(--revealed);
+    border-color: #3a4254;
+    animation: pop 220ms ease;
+  }
+  .item.revealed .ans { color: var(--text); transform: translateY(0); }
+  .item.revealed .dot { opacity: 0; transform: scale(0.4); }
+  .item.revealed .qnum { color: #738096; }
+  @keyframes pop {
+    0% { transform: scale(0.97); }
+    100% { transform: scale(1); }
+  }
+  .fab {
+    position: fixed;
+    top: 14px;
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: #9aa4b5;
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+    transition: background 160ms ease, border-color 160ms ease;
+    z-index: 5;
+  }
+  .fab:hover { background: #202531; border-color: #384055; color: var(--text); }
+  .fab svg { width: 18px; height: 18px; }
+  #fab { right: 14px; }
+  #reset { right: 60px; }
+  #overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 12, 16, 0.72);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 18px;
+    z-index: 10;
+  }
+  #overlay.open { display: flex; }
+  .panel {
+    width: min(560px, 100%);
+    background: var(--panel);
+    border: 1px solid var(--card-border);
+    border-radius: 14px;
+    padding: 14px;
+    cursor: default;
+  }
+  #jsonin {
+    width: 100%;
+    min-height: 180px;
+    resize: vertical;
+    background: #11151c;
+    color: var(--text);
+    border: 1px solid #2b3140;
+    border-radius: 10px;
+    padding: 12px;
+    font: 13px/1.45 "IBM Plex Mono", ui-monospace, monospace;
+    outline: none;
+  }
+  #jsonin:focus { border-color: var(--accent); }
+  .actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    margin-top: 10px;
+  }
+  .iconbtn {
+    width: 38px;
+    height: 38px;
+    border: 1px solid var(--card-border);
+    border-radius: 10px;
+    background: var(--surface);
+    color: var(--text);
+    display: grid;
+    place-items: center;
+    cursor: pointer;
+  }
+  .iconbtn:hover { background: #202531; }
+  .iconbtn.primary { background: #183044; border-color: #25607f; color: var(--accent); }
+  .iconbtn svg { width: 18px; height: 18px; }
+  #err {
+    min-height: 18px;
+    margin-top: 8px;
+    font: 500 12px "IBM Plex Mono", monospace;
+    color: var(--danger);
+  }
+  @media (max-width: 520px) {
+    #sheet { gap: 10px; grid-template-columns: repeat(auto-fill, minmax(52px, 1fr)); }
+    .item { border-radius: 10px; }
+  }
+</style>
+</head>
+<body>
+<button id="reset" class="fab" type="button" aria-label="Reset">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+</button>
+<button id="fab" class="fab" type="button" aria-label="JSON">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5a2 2 0 0 1 2-2 2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/></svg>
+</button>
+<div class="wrap">
+  <div id="progress"><div id="bar"></div></div>
+  <div id="sheet"></div>
+</div>
+<div id="overlay">
+  <div class="panel" id="panel">
+    <textarea id="jsonin" spellcheck="false" placeholder='[[1,1],[2,3],[3,4]]&#10;[1,3,4]&#10;{"1":1,"2":3}&#10;[{"q":1,"a":1}]'></textarea>
+    <div id="err"></div>
+    <div class="actions">
+      <button class="iconbtn" id="close" type="button" aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <button class="iconbtn primary" id="apply" type="button" aria-label="Apply">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+<script>
+  let answers = [
+    [1,1],[2,3],[3,4],[4,4],[5,2],[6,3],[7,4],[8,3],[9,2],[10,5],
+    [11,1],[12,3],[13,2],[14,1],[15,4],[16,3],[17,4],[18,3],[19,2],[20,1],
+    [21,1],[22,4],[23,2],[24,5],[25,5],[26,5],[27,1],[28,1],[29,3],[30,1],
+    [31,1],[32,1],[33,4],[34,4],[35,2],[36,4],[37,4],[38,5]
+  ];
+  const sheet = document.getElementById('sheet');
+  const bar = document.getElementById('bar');
+  const overlay = document.getElementById('overlay');
+  const jsonin = document.getElementById('jsonin');
+  const err = document.getElementById('err');
+  let revealed = 0;
+
+  function render() {
+    sheet.innerHTML = '';
+    revealed = 0;
+    answers.forEach(([n, a], i) => {
+      const d = document.createElement('div');
+      d.className = 'item' + (i === 0 ? ' next' : '');
+      d.innerHTML = `<span class="qnum">${n}</span><span class="dot"></span><span class="ans">${a}</span>`;
+      sheet.appendChild(d);
+    });
+    sync();
+  }
+  function sync() {
+    bar.style.width = (answers.length ? (revealed / answers.length * 100) : 0) + '%';
+  }
+  function revealNext() {
+    if (overlay.classList.contains('open')) return;
+    if (revealed >= answers.length) return;
+    const items = sheet.children;
+    items[revealed].classList.remove('next');
+    items[revealed].classList.add('revealed');
+    revealed++;
+    if (revealed < answers.length) items[revealed].classList.add('next');
+    sync();
+  }
+  function normalize(input) {
+    if (Array.isArray(input)) {
+      if (!input.length) return [];
+      if (Array.isArray(input[0]) && input[0].length >= 2) return input.map(x => [x[0], x[1]]);
+      if (typeof input[0] === 'object' && input[0] !== null) {
+        return input.map((x, i) => [x.q ?? x.question ?? x.n ?? x.no ?? x.number ?? (i + 1), x.a ?? x.answer ?? x.value ?? x.ans]);
+      }
+      return input.map((a, i) => [i + 1, a]);
+    }
+    if (input && typeof input === 'object') {
+      return Object.keys(input).sort((a,b)=>Number(a)-Number(b)).map(k => [k, input[k]]);
+    }
+    throw new Error();
+  }
+  function applyJson() {
+    try {
+      const parsed = JSON.parse(jsonin.value);
+      const next = normalize(parsed).filter(x => x[0] !== undefined && x[1] !== undefined);
+      if (!next.length) throw new Error();
+      answers = next;
+      err.textContent = '';
+      overlay.classList.remove('open');
+      render();
+    } catch {
+      err.textContent = '!';
+    }
+  }
+
+  document.body.addEventListener('click', (e) => {
+    if (e.target.closest('#fab') || e.target.closest('#reset') || e.target.closest('#overlay')) return;
+    revealNext();
+  });
+  document.body.addEventListener('keydown', (e) => {
+    if (overlay.classList.contains('open')) {
+      if (e.key === 'Escape') overlay.classList.remove('open');
+      return;
+    }
+    if ([' ', 'Enter', 'ArrowRight', 'ArrowDown'].includes(e.key)) {
+      e.preventDefault(); revealNext();
+    }
+  });
+  document.getElementById('reset').addEventListener('click', (e) => {
+    e.stopPropagation();
+    render();
+  });
+  document.getElementById('fab').addEventListener('click', (e) => {
+    e.stopPropagation();
+    err.textContent = '';
+    jsonin.value = JSON.stringify(answers);
+    overlay.classList.add('open');
+    jsonin.focus();
+  });
+  document.getElementById('close').addEventListener('click', (e) => { e.stopPropagation(); overlay.classList.remove('open'); });
+  document.getElementById('apply').addEventListener('click', (e) => { e.stopPropagation(); applyJson(); });
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
+  document.getElementById('panel').addEventListener('click', (e) => e.stopPropagation());
+  render();
+</script>
+</body>
+</html>
