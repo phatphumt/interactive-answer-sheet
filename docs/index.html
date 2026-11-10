@@ -283,7 +283,6 @@
   function revealUpTo(idx) {
     if (overlay.classList.contains('open')) return;
     idx = Math.max(0, Math.min(idx, answers.length - 1));
-    if (idx === revealed) return;
     const items = sheet.children;
     if (idx < revealed) {
       if (revealed < items.length) items[revealed].classList.remove('next');
