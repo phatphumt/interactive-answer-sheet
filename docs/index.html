@@ -253,6 +253,7 @@
     answers.forEach(([n, a], i) => {
       const d = document.createElement('div');
       d.className = 'item' + (i === 0 ? ' next' : '');
+      d.dataset.i = i;
       d.innerHTML = `<span class="qnum">${n}</span><span class="dot"></span><span class="ans">${a}</span>`;
       sheet.appendChild(d);
     });
@@ -277,13 +278,20 @@
     bar.style.width = (answers.length ? (revealed / answers.length * 100) : 0) + '%';
   }
   function revealNext() {
+    revealUpTo(revealed);
+  }
+  function revealUpTo(idx) {
     if (overlay.classList.contains('open')) return;
-    if (revealed >= answers.length) return;
+    idx = Math.max(0, Math.min(idx, answers.length - 1));
+    if (idx < revealed) return;
     const items = sheet.children;
-    items[revealed].classList.remove('next');
-    items[revealed].classList.add('revealed');
-    revealed++;
-    if (revealed < answers.length) items[revealed].classList.add('next');
+    if (revealed < items.length) items[revealed].classList.remove('next');
+    for (let i = revealed; i <= idx; i++) {
+      items[i].classList.remove('next');
+      items[i].classList.add('revealed');
+    }
+    revealed = idx + 1;
+    if (revealed < items.length) items[revealed].classList.add('next');
     sync();
     saveProgress();
   }
@@ -317,7 +325,12 @@
 
   document.body.addEventListener('click', (e) => {
     if (e.target.closest('#fab') || e.target.closest('#reset') || e.target.closest('#overlay')) return;
-    revealNext();
+    const item = e.target.closest('.item');
+    if (item && item.dataset.i !== undefined) {
+      revealUpTo(parseInt(item.dataset.i, 10));
+    } else {
+      revealNext();
+    }
   });
   document.body.addEventListener('keydown', (e) => {
     if (overlay.classList.contains('open')) {
