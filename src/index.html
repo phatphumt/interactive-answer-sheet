@@ -241,8 +241,12 @@
   const overlay = document.getElementById('overlay');
   const jsonin = document.getElementById('jsonin');
   const err = document.getElementById('err');
+  const STORAGE_KEY = 'interactive-answer-sheet:revealed';
   let revealed = 0;
 
+  function saveProgress() {
+    try { localStorage.setItem(STORAGE_KEY, String(revealed)); } catch {}
+  }
   function render() {
     sheet.innerHTML = '';
     revealed = 0;
@@ -252,6 +256,21 @@
       d.innerHTML = `<span class="qnum">${n}</span><span class="dot"></span><span class="ans">${a}</span>`;
       sheet.appendChild(d);
     });
+    sync();
+    saveProgress();
+  }
+  function restoreProgress() {
+    let saved = 0;
+    try { saved = parseInt(localStorage.getItem(STORAGE_KEY) || '0', 10) || 0; } catch {}
+    saved = Math.max(0, Math.min(saved, answers.length));
+    if (!saved) return;
+    const items = sheet.children;
+    for (let i = 0; i < saved && i < items.length; i++) {
+      items[i].classList.remove('next');
+      items[i].classList.add('revealed');
+    }
+    revealed = saved;
+    if (revealed < items.length) items[revealed].classList.add('next');
     sync();
   }
   function sync() {
@@ -266,6 +285,7 @@
     revealed++;
     if (revealed < answers.length) items[revealed].classList.add('next');
     sync();
+    saveProgress();
   }
   function normalize(input) {
     if (Array.isArray(input)) {
@@ -324,6 +344,7 @@
   overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.classList.remove('open'); });
   document.getElementById('panel').addEventListener('click', (e) => e.stopPropagation());
   render();
+  restoreProgress();
 </script>
 </body>
 </html>
